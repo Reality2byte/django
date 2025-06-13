@@ -1227,7 +1227,10 @@ class Query(BaseExpression):
     @property
     def _subquery_fields_len(self):
         if self.has_select_fields:
-            return len(self.selected)
+            return sum(
+                len(self.model._meta.pk_fields) if field == "pk" else 1
+                for field in self.selected
+            )
         return len(self.model._meta.pk_fields)
 
     def resolve_expression(self, query, *args, **kwargs):
@@ -1720,6 +1723,7 @@ class Query(BaseExpression):
                     "relations deeper than the relation_name (got %r for "
                     "%r)." % (lookup, filtered_relation.relation_name)
                 )
+        filtered_relation = filtered_relation.clone()
         filtered_relation.condition = rename_prefix_from_q(
             filtered_relation.relation_name,
             alias,
